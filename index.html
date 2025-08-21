@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Builder & Analyzer</title>
+  <style>
+    :root{
+      --bg:#0c3845;--card:#053947;--ink:#12c69f;--muted:#6b7280;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--chip:#1840c5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{padding:18px 22px;border-bottom:1px solid #d9dce2;background:#372e45;position:sticky;top:0;z-index:5}
+    header h1{font-size:20px;margin:0}
+    .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:18px;align-items:start}
+    .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)}
+    .card h3{margin:0 0 10px 0;font-size:18px}
+    .pad{padding:16px}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input[type=text], input[type=email], textarea, select{
+      width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;background:#fff;outline:none
+    }
+    textarea{min-height:90px;resize:vertical}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;cursor:pointer;font-weight:600}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn.ghost{background:#eef2ff;color:#1f2937}
+    .btn.danger{background:var(--bad)}
+    .btn.print{background:#0ea5e9}
+    .muted{color:var(--muted)}
+    .resume{border:1px dashed #d1d5db;border-radius:12px;padding:16px;background:#fafafa}
+    .analysis{margin-top:12px;border-left:6px solid var(--brand);background:#eff6ff;padding:12px;border-radius:10px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-size:12px}
+    .vbar{height:1px;background:#e5e7eb;margin:14px 0}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stack{display:grid;gap:10px}
+    .small{font-size:12px}
+    .right .pad{padding:16px}
+
+    /* Print to PDF: show only resume content */
+    @media print{
+      header, .left, .analysis, .manage, .print-hide{display:none !important}
+      .right, .resume{border:0;box-shadow:none}
+      body{background:#fff}
+    }
+  </style>
+</head>
+<body>
+  <header class="print-hide">
+    <h1>Resume Builder & Analyzer </h1>
+    <div class="muted small">Builder · Detailed Analysis · Weighted Score · JD Match · ATS Score · Job Recommendations · AI Suggestions · Save/Manage Versions</div>
+  </header>
+
+  <main class="wrap">
+    <!-- LEFT: Inputs + Version Manager -->
+    <section class="left card">
+      <div class="pad">
+        <h3>Enter Your Details</h3>
+        <div class="two">
+          <div>
+            <label for="title">Resume Title (optional)</label>
+            <input id="title" type="text" placeholder="e.g., SDE Resume v1" />
+          </div>
+          <div>
+            <label for="name">Full Name</label>
+            <input id="name" type="text" placeholder="Your Name" />
+          </div>
+        </div>
+        <div class="two">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label for="phone">Phone</label>
+            <input id="phone" type="text" placeholder="98765 43210" />
+          </div>
+        </div>
+
+        <label for="education">Education</label>
+        <textarea id="education" placeholder="B.Tech in CSE, XYZ University (2022) — CGPA 8.3"></textarea>
+
+        <label for="experience">Experience / Projects</label>
+        <textarea id="experience" placeholder="Developed a full‑stack app using React, Node.js and SQL; Improved load time by 30%."></textarea>
+
+        <label for="skills">Skills (comma separated)</label>
+        <input id="skills" type="text" placeholder="HTML, CSS, JavaScript, React, Python, SQL" />
+
+        <label for="jobdesc">Job Description (paste here)</label>
+        <textarea id="jobdesc" placeholder="We are hiring a React + Node developer with SQL knowledge..."></textarea>
+
+        <div class="vbar"></div>
+        <div class="row">
+          <button id="btnGenerate" class="btn">Generate & Analyze</button>
+          <button id="btnPrint" class="btn print">Download PDF (Print)</button>
+        </div>
+      </div>
+
+      <div class="pad manage print-hide">
+        <h3>Resume Versions</h3>
+        <div class="stack">
+          <div class="row">
+            <select id="versionSelect" style="flex:1"></select>
+          </div>
+          <div class="row">
+            <button id="btnNew" class="btn ghost">New</button>
+            <button id="btnSave" class="btn">Save as New</button>
+            <button id="btnUpdate" class="btn" disabled>Update Selected</button>
+            <button id="btnDelete" class="btn danger" disabled>Delete</button>
+          </div>
+          <div class="row">
+            <button id="btnExport" class="btn ghost">Export JSON</button>
+            <input id="importFile" type="file" accept="application/json" style="display:none" />
+            <button id="btnImport" class="btn ghost">Import JSON</button>
+          </div>
+          <div class="small muted">Tip: Use <b>Save as New</b> to create versions (v1, v2, …). Use <b>Update Selected</b> to overwrite the chosen version.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Output -->
+    <section class="right card">
+      <div class="pad">
+        <h3>Generated Resume</h3>
+        <div id="resumeOutput" class="resume"></div>
+
+        <div class="analysis print-hide" id="analysisOutput"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Utilities =====
+    const STORAGE_KEY = 'rb_versions_v1';
+
+    const requiredSkillsMaster = [
+      'python','java','c++','c#','sql','html','css','javascript','react','node.js','node','spring','apis','excel','statistics','tensorflow','ml','data science'
+    ];
+
+    const jobRolesDB = {
+      'Web Developer': ['HTML','CSS','JavaScript','React'],
+      'Backend Developer': ['Java','Spring','SQL','APIs'],
+      'Data Analyst': ['Python','SQL','Excel','Statistics'],
+      'Machine Learning Engineer': ['Python','TensorFlow','ML','Data Science'],
+      'Full Stack Developer': ['HTML','CSS','JavaScript','React','Node.js','SQL']
+    };
+
+    function qs(id){return document.getElementById(id)}
+
+    function sanitizeSkills(input){
+      return input
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length)
+    }
+
+    function toLowerSet(arr){return new Set(arr.map(x => x.toLowerCase()))}
+
+    function nowStamp(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function readVersions(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }catch(e){ return [] }
+    }
+    function writeVersions(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+    function formData(){
+      return {
+        id: qs('versionSelect').value || null,
+        title: qs('title').value.trim(),
+        name: qs('name').value.trim(),
+        email: qs('email').value.trim(),
+        phone: qs('phone').value.trim(),
+        education: qs('education').value.trim(),
+        experience: qs('experience').value.trim(),
+        skills: sanitizeSkills(qs('skills').value),
+        jobdesc: qs('jobdesc').value.trim(),
+        updatedAt: nowStamp()
+      };
+    }
+
+    function fillForm(v){
+      qs('title').value = v.title||'';
+      qs('name').value = v.name||'';
+      qs('email').value = v.email||'';
+      qs('phone').value = v.phone||'';
+      qs('education').value = v.education||'';
+      qs('experience').value = v.experience||'';
+      qs('skills').value = (v.skills||[]).join(', ');
+      qs('jobdesc').value = v.jobdesc||'';
+    }
+
+    function renderVersionSelect(){
+      const sel = qs('versionSelect');
+      const list = readVersions();
+      sel.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = ''; ph.textContent = '— Select a saved version —';
+      sel.appendChild(ph);
+      list.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v.id; o.textContent = `${v.title || v.name || 'Untitled'} · ${v.updatedAt}`;
+        sel.appendChild(o);
+      });
+      updateVersionButtons();
+    }
+
+    function updateVersionButtons(){
+      const hasSel = !!qs('versionSelect').value;
+      qs('btnUpdate').disabled = !hasSel;
+      qs('btnDelete').disabled = !hasSel;
+    }
+
+    // ===== Core: Generate + Analyze =====
+    function generateResume(){
+      const data = formData();
+
+      // Resume HTML
+      const skillsHtml = (data.skills||[]).map(s=>`<span class="chip">${s}</span>`).join(' ');
+      const resumeHTML = `
+        <div>
+          <h2 style="margin:0 0 6px">${data.name||'Your Name'}</h2>
+          <div class="muted small">${data.email||''}${data.email&&data.phone?' · ':''}${data.phone||''}</div>
+          <div class="vbar"></div>
+          <h3 style="margin:0 0 6px">Education</h3>
+          <div>${(data.education||'').replace(/\n/g,'<br>')}</div>
+          <div class="vbar"></div>
+          <h3 style="margin:0 0 6px">Experience / Projects</h3>
+          <div>${(data.experience||'').replace(/\n/g,'<br>')}</div>
+          <div class="vbar"></div>
+          <h3 style="margin:0 0 6px">Skills</h3>
+          <div class="chips">${skillsHtml||'<span class="muted">Add skills</span>'}</div>
+        </div>`;
+      qs('resumeOutput').innerHTML = resumeHTML;
+
+      // ===== Scoring: Weighted (Objective 3) =====
+      let score = 0; const feedback = [];
+      // Contact (10)
+      if (data.email && data.phone){ score += 10; feedback.push('✅ Contact Info present'); }
+      else { feedback.push('❌ Missing Contact Info'); }
+      // Education (20)
+      if ((data.education||'').length > 5){ score += 20; feedback.push('✅ Education section filled'); }
+      else { feedback.push('❌ Add more details in Education'); }
+      // Experience (30)
+      if ((data.experience||'').length > 10){ score += 30; feedback.push('✅ Experience section looks good'); }
+      else { feedback.push('❌ Experience is too short'); }
+      // Skills (40)
+      const reqLower = toLowerSet(['Python','Java','C++','C#','SQL','HTML','CSS','JavaScript','React']);
+      let matchCount = 0;
+      (data.skills||[]).forEach(s=>{ if (reqLower.has(s.toLowerCase())) matchCount++; });
+      const skillScore = Math.min(matchCount*10, 40); score += skillScore;
+      feedback.push(skillScore>=25 ? '✅ Strong skills section' : '❌ Add more technical skills (Python, Java, SQL, etc.)');
+
+      // ===== JD Match (Objective 4) =====
+      let jdMatchPercent = 0;
+      if ((data.jobdesc||'').length){
+        // extract tokens & normalize
+        const jdTokens = (data.jobdesc.toLowerCase().match(/[a-zA-Z+#.]+/g) || [])
+          .map(w=>w.replace('nodejs','node.js'));
+        const jdSet = new Set(jdTokens);
+        const skillsLower = data.skills.map(s=>s.toLowerCase());
+        const uniqueSkills = Array.from(new Set(skillsLower));
+        const matches = uniqueSkills.filter(s => jdSet.has(s));
+        jdMatchPercent = Math.round(matches.length / Math.max(1, uniqueSkills.length) * 100);
+        feedback.push(jdMatchPercent>60 ? `✅ Good JD Match: ${jdMatchPercent}%` : `❌ Low JD Match: ${jdMatchPercent}% — add JD keywords`);
+      }
+
+      // ===== ATS Score (Objective 5) =====
+      let atsScore = 0; const atsFeedback = [];
+      const hasEdu = (data.education||'').length > 5;
+      const hasExp = (data.experience||'').length > 5;
+      const hasSkills = (data.skills||[]).length > 0;
+      if (hasEdu && hasExp && hasSkills){ atsScore += 40; atsFeedback.push('✅ Standard sections found (Education, Experience, Skills)'); }
+      else { atsFeedback.push('❌ Missing important sections (Education/Experience/Skills)'); }
+      if ((data.skills||[]).length >= 5){ atsScore += 30; atsFeedback.push('✅ Good number of skills (ATS prefers 5+)'); }
+      else { atsFeedback.push('❌ Add more skills to improve ATS score'); }
+      if (jdMatchPercent > 50){ atsScore += 30; atsFeedback.push(`✅ JD Match is strong (${jdMatchPercent}%)`); }
+      else if ((data.jobdesc||'').length){ atsFeedback.push(`❌ JD Match is weak (${jdMatchPercent}%)`); }
+      feedback.push(`<b>ATS Score:</b> ${atsScore}/100`);
+      atsFeedback.forEach(f=>feedback.push(f));
+
+      // ===== Job Recommendations (Objective 6) =====
+      const recommendations = [];
+      const skillsLower = data.skills.map(s=>s.toLowerCase());
+      for(const role in jobRolesDB){
+        const req = jobRolesDB[role].map(x=>x.toLowerCase());
+        const m = req.filter(r=>skillsLower.includes(r));
+        const pct = Math.round(m.length/req.length*100);
+        if (pct>40) recommendations.push(`${role} (${pct}% match)`);
+      }
+      if (recommendations.length) feedback.push(`<b>Recommended Jobs:</b> ${recommendations.join(', ')}`);
+      else feedback.push('❌ No strong job recommendations found. Add more relevant skills.');
+
+      // ===== AI Suggestions (Objective 7) =====
+      const suggestions=[];
+      if ((data.experience||'').split(/\s+/).length < 20) suggestions.push('💡 Expand your Experience with achievements and measurable outcomes.');
+      const eduLower=(data.education||'').toLowerCase();
+      if (!/(b\.?tech|be|degree|bachelor|master|mca|bca)/.test(eduLower) || (data.education||'').split(/\s+/).length < 10) suggestions.push('💡 Add details in Education (degree, university, GPA, year).');
+      if ((data.skills||[]).length < 5) suggestions.push('💡 Add at least 5–8 relevant skills.');
+      const verbs=['developed','designed','led','managed','created','implemented','built','organized','optimized','improved'];
+      const expLower=(data.experience||'').toLowerCase();
+      if (!verbs.some(v=>expLower.includes(v))) suggestions.push('💡 Use strong action verbs (Developed, Led, Designed, Implemented).');
+      if (suggestions.length) feedback.push('<b>AI Suggestions:</b><br>'+suggestions.join('<br>'));
+      else feedback.push('✅ Your resume looks well-structured with strong details!');
+
+      // Render analysis
+      const out = ['<h4>Resume Score: '+score+'/100</h4>','<ul>'+feedback.map(f=>'\n<li>'+f+'</li>').join('')+'\n</ul>'];
+      qs('analysisOutput').innerHTML = out.join('\n');
+    }
+
+    // ===== Versioning (Objective 8) =====
+    function makeVersionObject(base){
+      const id = base.id || 'v_'+Date.now();
+      const title = base.title || `${base.name||'Untitled'} — ${nowStamp()}`;
+      return { id, ...base, title };
+    }
+
+    function saveAsNew(){
+      const data = makeVersionObject(formData());
+      const list = readVersions();
+      // ensure unique id
+      data.id = 'v_'+Date.now()+Math.floor(Math.random()*1000);
+      list.unshift(data); // newest on top
+      writeVersions(list);
+      renderVersionSelect();
+      qs('versionSelect').value = data.id; updateVersionButtons();
+    }
+
+    function updateSelected(){
+      const sel = qs('versionSelect').value; if (!sel) return;
+      const list = readVersions();
+      const idx = list.findIndex(v=>v.id===sel); if (idx<0) return;
+      const data = makeVersionObject({ ...formData(), id: sel });
+      list[idx] = data;
+      writeVersions(list);
+      renderVersionSelect();
+      qs('versionSelect').value = sel; updateVersionButtons();
+    }
+
+    function deleteSelected(){
+      const sel = qs('versionSelect').value; if (!sel) return;
+      if (!confirm('Delete this saved version?')) return;
+      const list = readVersions().filter(v=>v.id!==sel);
+      writeVersions(list);
+      renderVersionSelect();
+      clearForm();
+    }
+
+    function clearForm(){
+      ['title','name','email','phone','education','experience','skills','jobdesc'].forEach(id=>qs(id).value='');
+      qs('versionSelect').value=''; updateVersionButtons();
+      qs('resumeOutput').innerHTML='';
+      qs('analysisOutput').innerHTML='';
+    }
+
+    function loadSelected(){
+      const sel = qs('versionSelect').value; updateVersionButtons();
+      if (!sel) return;
+      const list = readVersions();
+      const v = list.find(x=>x.id===sel); if (!v) return;
+      fillForm(v);
+      generateResume();
+    }
+
+    function exportJSON(){
+      const data = readVersions();
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'resume_versions.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const incoming = JSON.parse(reader.result);
+          if (!Array.isArray(incoming)) throw new Error('Invalid file');
+          const map = new Map();
+          readVersions().forEach(v=>map.set(v.id,v));
+          incoming.forEach(v=>{ if (!map.has(v.id)) map.set(v.id,v); });
+          writeVersions(Array.from(map.values()));
+          renderVersionSelect();
+          alert('Import complete');
+        }catch(e){ alert('Failed to import: '+e.message); }
+      };
+      reader.readAsText(file);
+    }
+
+    // ===== Events =====
+    window.addEventListener('DOMContentLoaded',()=>{
+      renderVersionSelect();
+      qs('btnGenerate').addEventListener('click', generateResume);
+      qs('btnPrint').addEventListener('click', ()=>window.print());
+      qs('btnSave').addEventListener('click', saveAsNew);
+      qs('btnUpdate').addEventListener('click', updateSelected);
+      qs('btnDelete').addEventListener('click', deleteSelected);
+      qs('btnNew').addEventListener('click', clearForm);
+      qs('versionSelect').addEventListener('change', loadSelected);
+      qs('btnExport').addEventListener('click', exportJSON);
+      qs('btnImport').addEventListener('click', ()=> qs('importFile').click());
+      qs('importFile').addEventListener('change', (e)=>{
+        const f = e.target.files[0]; if (f) importJSON(f);
+      });
+    });
+  </script>
+</body>
+</html>
