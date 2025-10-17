@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome • Resume Builder</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1b1030;
+      color: #e7ecff;
+      font-family: Inter, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .auth-box {
+      background: #441b42;
+      padding: 32px;
+      border-radius: 14px;
+      width: 360px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #1f2b4d;
+      border-radius: 10px;
+      background: #0f1730;
+      color: #fff;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #6ea8ff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .link {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #93a1c6;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-box" id="loginBox">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPass" placeholder="Password">
+    <button class="btn" onclick="handleLogin()">Login</button>
+    <div class="link" onclick="showRegister()">No account? Register</div>
+  </div>
+
+  <div class="auth-box" id="registerBox" style="display:none;">
+    <h2>Register</h2>
+    <input type="text" id="regName" placeholder="Full Name">
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="password" id="regPass" placeholder="Password">
+    <button class="btn" onclick="handleRegister()">Create Account</button>
+    <div class="link" onclick="showLogin()">Already registered? Login</div>
+  </div>
+
+  <script>
+    function showRegister(){
+      document.getElementById('loginBox').style.display='none';
+      document.getElementById('registerBox').style.display='block';
+    }
+    function showLogin(){
+      document.getElementById('loginBox').style.display='block';
+      document.getElementById('registerBox').style.display='none';
+    }
+
+    // Fake localStorage auth
+    function handleRegister(){
+      const name = regName.value.trim();
+      const email = regEmail.value.trim();
+      const pass = regPass.value.trim();
+
+      if(!name || !email || !pass) return alert("All fields required.");
+      localStorage.setItem('authUser', JSON.stringify({name,email,pass}));
+      alert("Registration successful. Please login.");
+      showLogin();
+    }
+
+    function handleLogin(){
+      const email = loginEmail.value.trim();
+      const pass = loginPass.value.trim();
+      const stored = JSON.parse(localStorage.getItem('authUser') || '{}');
+      if(stored.email === email && stored.pass === pass){
+        localStorage.setItem('loggedIn', 'true');
+        window.location.href = "resume.html"; // rename your current file to resume.html
+      } else {
+        alert("Invalid credentials");
+      }
+    }
+  </script>
+</body>
+</html>
